@@ -218,6 +218,23 @@ def _read_details_txt(file_contents: str) -> dict:
         if key and value:
             output[key.strip()] = value.strip()
 
+    if output["Version"] == "0221":
+        # very old STLink version has version hardcoded to 0221
+        output["Version"] += " (deprecated)"
+    # newest STLink version indicates the real version
+    STLinkCheck = re.match("V(\d)J(\d+)M(\d+)", output["Version"])
+    STLinkV2 = 37    # V2JxMx on ST-LINK-V2.1
+    STLinkV3 = 7     # V3JxMx on ST-LINK-V3
+    if STLinkCheck:
+        if STLinkCheck[1] == "2":
+            if int(STLinkCheck[2]) < STLinkV2:
+                output["Version"] += " (deprecated)"
+        else:
+            if int(STLinkCheck[2]) < STLinkV3:
+                output["Version"] += " (deprecated)"
+    if "deprecated" in output["Version"]:
+        print ("Latest STLink version : https://www.st.com/en/development-tools/stsw-link007.html")
+
     # Some forms of details.txt use Interface Version instead of Version as the key for the version number field
     if "Interface Version" in output and "Version" not in output:
         output["Version"] = output.pop("Interface Version")
